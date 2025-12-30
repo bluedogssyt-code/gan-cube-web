@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GAN Cube Web App</title>
+  <style>
+    body {
+      background: #0e0e0e;
+      color: #eaeaea;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 60px;
+    }
+    button {
+      padding: 14px 24px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    pre {
+      margin: 20px auto;
+      width: 80%;
+      max-height: 300px;
+      overflow: auto;
+      background: #1b1b1b;
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<h1>GAN Cube Connector</h1>
+<button id="connect">Connect Cube</button>
+<pre id="log"></pre>
+
+<script>
+  const logBox = document.getElementById("log");
+  const log = msg => logBox.textContent += msg + "\n";
+
+  document.getElementById("connect").addEventListener("click", async () => {
+    if (!navigator.bluetooth) {
+      log("Web Bluetooth not supported in this browser.");
+      return;
+    }
+
+    try {
+      log("Requesting Bluetooth device…");
+
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true
+      });
+
+      log("Selected: " + (device.name || "Unnamed device"));
+
+      const server = await device.gatt.connect();
+      log("Connected to GATT server.");
+
+    } catch (err) {
+      log("Error: " + err.message);
+    }
+  });
+</script>
+
+</body>
+</html>
