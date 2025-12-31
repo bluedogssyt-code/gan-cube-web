@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GAN Cube Web App</title>
+  <title>GAN Cube Logger</title>
   <style>
     body {
       background: #0e0e0e;
       color: #eaeaea;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding-top: 60px;
+      padding-top: 50px;
     }
     button {
       padding: 14px 24px;
@@ -29,36 +29,53 @@
 </head>
 <body>
 
-<h1>GAN Cube Connector</h1>
+<h1>GAN Cube Logger</h1>
 <button id="connect">Connect Cube</button>
 <pre id="log"></pre>
 
 <script>
-  const logBox = document.getElementById("log");
-  const log = msg => logBox.textContent += msg + "\n";
+const logBox = document.getElementById("log");
+const log = msg => logBox.textContent += msg + "\n";
 
-  document.getElementById("connect").addEventListener("click", async () => {
-    if (!navigator.bluetooth) {
-      log("Web Bluetooth not supported in this browser.");
-      return;
-    }
+// Replace these with your GAN cube's known service/characteristic UUIDs
+const GAN_SERVICE_UUID = "0000fff0-0000-1000-8000-00805f9b34fb";
+const GAN_CHAR_UUID = "0000fff1-0000-1000-8000-00805f9b34fb";
 
-    try {
-      log("Requesting Bluetooth device…");
+document.getElementById("connect").addEventListener("click", async () => {
+  if (!navigator.bluetooth) {
+    log("Web Bluetooth not supported here.");
+    return;
+  }
 
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true
-      });
+  try {
+    log("Requesting GAN cube…");
 
-      log("Selected: " + (device.name || "Unnamed device"));
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [GAN_SERVICE_UUID] }]
+    });
 
-      const server = await device.gatt.connect();
-      log("Connected to GATT server.");
+    log("Selected: " + (device.name || "Unnamed device"));
 
-    } catch (err) {
-      log("Error: " + err.message);
-    }
-  });
+    const server = await device.gatt.connect();
+    log("Connected to GATT server.");
+
+    const service = await server.getPrimaryService(GAN_SERVICE_UUID);
+    const characteristic = await service.getCharacteristic(GAN_CHAR_UUID);
+
+    await characteristic.startNotifications();
+    log("Listening for moves…");
+
+    characteristic.addEventListener("characteristicvaluechanged", e => {
+      const data = new Uint8Array(e.target.value.buffer);
+      // Each byte in 'data' corresponds to cube info
+      log("Raw data: " + [...data].join(", "));
+      // Optional: decode later into human-readable moves
+    });
+
+  } catch (err) {
+    log("Error: " + err.message);
+  }
+});
 </script>
 
 </body>
